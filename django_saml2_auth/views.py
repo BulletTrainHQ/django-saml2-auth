@@ -216,7 +216,7 @@ def acs(r):
     # Add in section to generate a rest framework auth token
     if settings.SAML2_AUTH.get('USE_TOKEN_AUTHENTICATION') is True:
         # Generate a token for the user
-        token = Token.objects.create(user=target_user)
+        token, _ = Token.objects.get_or_create(user=target_user)
         query = '?token={}'.format(token)
         frontend_url = settings.SAML2_AUTH.get('FRONTEND_URL', next_url)
 
