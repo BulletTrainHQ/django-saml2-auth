@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-
-
+from rest_framework.authtoken.models import Token
 from saml2 import (
     BINDING_HTTP_POST,
     BINDING_HTTP_REDIRECT,
@@ -138,7 +137,10 @@ def denied(r):
 
 
 def _create_new_user(username, email, firstname, lastname):
-    user = User.objects.create_user(username, email)
+    # had to customise this a bit to fit the customer create_user method
+    user = User.objects.create_user(email)
+    user.username = username
+
     user.first_name = firstname
     user.last_name = lastname
     groups = [Group.objects.get(name=x) for x in settings.SAML2_AUTH.get('NEW_USER_PROFILE', {}).get('USER_GROUPS', [])]
@@ -208,6 +210,15 @@ def acs(r):
 
         frontend_url = settings.SAML2_AUTH.get(
             'FRONTEND_URL', next_url)
+
+        return HttpResponseRedirect(frontend_url+query)
+
+    # Add in section to generate a rest framework auth token
+    if settings.SAML2_AUTH.get('USE_TOKEN_AUTHENTICATION') is True:
+        # Generate a token for the user
+        token = Token.objects.create(user=target_user)
+        query = '?token={}'.format(token)
+        frontend_url = settings.SAML2_AUTH.get('FRONTEND_URL', next_url)
 
         return HttpResponseRedirect(frontend_url+query)
 
